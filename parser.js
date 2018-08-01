@@ -1,10 +1,5 @@
 const util = require('./util');
 
-// generate string of whitespaces
-function white(n) {
-	return Array(n).fill(' ').join('');
-}
-
 // replace cdata tags with whitespaces
 function eraseCDATA(s) {
 	const CDATA_OPEN = '<![CDATA[';
@@ -15,9 +10,9 @@ function eraseCDATA(s) {
 
 	if (is >= 0 && ie >= 0) {
 		s.text = s.text.substring(0, is)
-			+ white(CDATA_OPEN.length)
+			+ util.white(CDATA_OPEN.length)
 			+ s.text.substring(is+CDATA_OPEN.length, ie)
-			+ white(CDATA_CLOSE.length)
+			+ util.white(CDATA_CLOSE.length)
 			+ s.text.substring(ie+CDATA_CLOSE.length);
 	}
 	return s;
@@ -55,8 +50,8 @@ function setName(o, name) {
 
 			let m = [];
 			let obj = name.object;
-			while (obj) {
 
+			while (obj) {
 				switch (obj.type) {
 					default:
 						throw new Error(`Unexpected node type ${obj.type}`);
@@ -85,6 +80,8 @@ function setName(o, name) {
 
 function setValue(o, val) {
 	switch (val.type) {
+		default:
+			throw new Error(`Unexpected value type ${val.type}`);
 		case 'JSXText':
 			o.type = 'text';
 			o.value = val.value.match(/^[\n\t]*(.*?)[\n\t]*$/)[1];
@@ -104,11 +101,17 @@ function setValue(o, val) {
 // create component from jsx element
 function createComponent(je) {
 	const oe = je.openingElement;
-	let comp = {};
+	let comp = {
+		strings: [],
+		jcss: [],
+		style: [],
+		script: [],
+		loc: je.loc
+	};
 
 	setName(comp, oe.name);
 	comp.attributes = oe.attributes.map(a => {
-		let attr = {};
+		let attr = { loc: a.loc };
 		setName(attr, a.name);
 		setValue(attr, a.value);
 		return attr;
@@ -134,7 +137,7 @@ function parseComponents(e, parent, options = {}) {
 			switch (c.type) {
 				case 'JSXText':
 					if (!c.value.match(/^[\t\n]*$/)) {
-						let child = { name: '', attributes: [] };
+						let child = { name: '', attributes: [], loc: c.loc };
 						setValue(child, c);
 
 						comp.children = comp.children || [];
@@ -143,7 +146,7 @@ function parseComponents(e, parent, options = {}) {
 					break;
 				case 'JSXExpressionContainer':
 					if (c.expression.type !== 'JSXEmptyExpression') { // ignore comment
-						let child = { name: '', attributes: [] };
+						let child = { name: '', attributes: [], loc: c.loc };
 						setValue(child, c);
 
 						comp.children = comp.children || [];
@@ -151,146 +154,113 @@ function parseComponents(e, parent, options = {}) {
 					}
 					break;
 				case 'JSXElement':
-					parseComponents(c, comp, options);
-					break;
-
-			}
-		});
-	}
-
-	parent.children = parent.children || [];
-	parent.children.push(comp);
-}
-
-class JXMLParser {
-	constructor() {
-		this.strings = [];
-		this.jcss = [];
-		this.style = [];
-		this.script = [];
-	}
-
-	parse(path, options) {
-
-		util.preprocessJXMLNode(path, options);
-
-		this.root = createComponent(path.node);
-
-		path.node.children.forEach(e => {
-			switch (e.type) {
-				default:
-					console.log(e);
-					throw new Error(`Unexpected node type: ${e.type}`);
-				case 'JSXText':
-				case 'JSXExpressionContainer':
-					// ignore
-					break;
-				case 'JSXElement':
-					if (imatchTag(e, 'script')) {
-						this.addScript(e);
-					} else if (imatchTag(e, 'jcss')) {
-						this.parseJCSS(e);
-					} else if (imatchTag(e, 'string')) {
-						this.addString(e);
+					if (imatchTag(c, 'script')) {
+						collectTemplateLiterals(c, comp.script);
+					} else if (imatchTag(c, 'jcss')) {
+						collectTemplateLiterals(c, comp.jcss);
+					} else if (imatchTag(c, 'string')) {
+						let s = createComponent(c);
+						if (c.children.length !== 1 && c.children[0].type !== 'JSXText') {
+							throw new Error('Unexpected <string>');
+						}
+						s.value = c.children[0].value;
+						s.loc = e.loc;
+						comp.strings.push(s);
 					} else {
-						this.addComponent(e, options);
+						parseComponents(c, comp, options);
 					}
 					break;
-			}
-		});
 
-		this.processNamespaces();
-		this.processJCSS();
-		this.processScript();
-		this.checkDefaultPlacement();
-
-		return {
-			name: options.component,
-			module: options.module,
-			source: options.source,
-			root: this.root,
-			defaultPlacementID: this.defaultPlacementID,
-			namespaces: this.namespaces,
-			strings: this.strings.map(s => {
-				let s2 = { value: s.value };
-				s.attributes.forEach(a => {
-					s2[a.name] = a.value;
-				});
-				return s2;
-			}),
-			jcss: this.jcss,
-			style: this.style,
-			script: this.script
-		};
-	}
-
-
-	parseJCSS(e) {
-		collectTemplateLiterals(e, this.jcss);
-	}
-
-	addScript(e) {
-		collectTemplateLiterals(e, this.script);
-	}
-
-	addString(e) {
-		let s = createComponent(e);
-		if (e.children.length !== 1 && e.children[0].type !== 'JSXText') {
-			throw new Error('Unexpected <string>');
-		}
-		s.value = e.children[0].value;
-		this.strings.push(s);
-	}
-
-	addComponent(e, options) {
-		parseComponents(e, this.root, options);
-	}
-
-	// extract namespace map from the root component
-	processNamespaces() {
-		this.namespaces = { __default__: '' };
-		this.root.attributes.forEach(a => {
-			if (a.name === 'xmlns') {
-				this.namespaces.__default__ = a.value;
-			} else if (a.namespace === 'xmlns') {
-				this.namespaces[a.name] = a.value;
 			}
 		});
 	}
 
-	processJCSS() {
-		this.jcss = this.jcss.map(s => eraseCDATA(s));
+	if (parent) {
+		parent.children = parent.children || [];
+		parent.children.push(comp);
 	}
 
-	processScript() {
-		this.script = this.script.map(s => eraseCDATA(s));
+	return comp;
+}
+
+// extract namespace map from the component
+function getNamespaces(comp) {
+	let namespaces = { __default__: { value: '' }};
+	comp.attributes.forEach(a => {
+		if (a.name === 'xmlns') {
+			namespaces.__default__ = { value: a.value, loc: a.loc };
+		} else if (a.namespace === 'xmlns') {
+			namespaces[a.name] = { value: a.value, loc: a.loc };
+		}
+	});
+	return namespaces;
+}
+
+function getStrings(comp) {
+	return comp.strings.map(s => {
+		let s2 = { value: s.value, loc: s.loc };
+		s.attributes.forEach(a => {
+			s2[a.name] = a.value;
+		});
+		return s2;
+	});
+}
+
+function getJCSS(comp) {
+	return comp.jcss.map(s => eraseCDATA(s));
+}
+
+function getScript(comp) {
+	return comp.script.map(s => eraseCDATA(s));
+}
+
+function getStyle(comp) {
+	return comp.style;
+}
+
+function getDefaultPlacement(comp) {
+
+	function find(c) {
+		if (c.attributes.find(a => a.name === 'container' && a.value === 'default') != undefined) {
+			return c;
+		}
+		for (let i = 0; c.children && i < c.children.length; i++) {
+			let c2 = find(c.children[i]);
+			if (c2) {
+				return c2;
+			}
+		}
 	}
 
-	checkDefaultPlacement() {
-
-		function find(c) {
-			if (c.attributes.find(a => a.name === 'container' && a.value === 'default') != undefined) {
-				return c;
-			}
-			for (let i = 0; c.children && i < c.children.length; i++) {
-				let c2 = find(c.children[i]);
-				if (c2) {
-					return c2;
-				}
-			}
+	let c = find(comp);
+	if (c) {
+		let a = c.attributes.find(a => a.name === 'id');
+		if (!a) {
+			a = { name: 'id', type: 'text', value: '$$defaultplacement$$'};
+			c.attributes.push(a);
 		}
-
-		let comp = find(this.root);
-		if (comp) {
-			let a = comp.attributes.find(a => a.name === 'id');
-			if (!a) {
-				a = { name: 'id', type: 'text', value: '$$defaultplacement$$'};
-				comp.attributes.push(a);
-			}
-			this.defaultPlacementID = a.value;
-		}
+		return a.value;
 	}
 }
 
-module.exports = JXMLParser;
+
+module.exports = (path, options) => {
+
+	util.preprocessJXMLNode(path, options);
+
+	let root = parseComponents(path.node, null, options);
+
+	return {
+		name: options.component,
+		module: options.module,
+		source: options.source,
+		root: root,
+		defaultPlacementID: getDefaultPlacement(root),
+		namespaces: getNamespaces(root),
+		strings: getStrings(root),
+		jcss: getJCSS(root),
+		style: getStyle(root),
+		script: getScript(root)
+	};
+};
 

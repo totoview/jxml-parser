@@ -2,7 +2,12 @@ const traverse = require('@babel/traverse').default;
 const generate = require('@babel/generator').default;
 const codeFrame = require('@babel/code-frame').codeFrameColumns;
 const T = require('@babel/template').default;
+const util = require('util');
 
+// generate string of whitespaces
+function white(n) {
+	return Array(n).fill(' ').join('');
+}
 
 function generateError(e, filepath, source, loc) {
 
@@ -272,7 +277,7 @@ function preprocessAST(prog, options) {
 }
 
 /**
- * Get component name as [<namespace>, <name>], if member reference
+ * Get component name as [<namespace>, <name>, <loc>], if member reference
  * is involved, object name is appended to <namespace> and member
  * name is used as <name>
  */
@@ -281,14 +286,16 @@ function getNamespacedName(comp, nsMap) {
 	if (nsMap[ns] === undefined) {
 		throw new Error(`Invalid namespace ${ns}`);
 	}
+	const loc = nsMap[ns].loc;
+
 	if (comp.module) {
-		if (nsMap[ns] !== '') {
-			return [nsMap[ns] + '.' + comp.module, comp.name];
+		if (nsMap[ns].value !== '') {
+			return [nsMap[ns].value + '.' + comp.module, comp.name, loc];
 		} else {
-			return [comp.module, comp.member];
+			return [comp.module, comp.member, loc];
 		}
 	} else {
-		return [nsMap[ns], comp.name];
+		return [nsMap[ns].value, comp.name, loc];
 	}
 }
 
@@ -325,6 +332,84 @@ function rewriteImports(prog) {
 	});
 }
 
+function setLoc(ast, loc, addIfMissing = false) {
+	if (util.isObject(ast)) {
+		let found = false;
+		Object.keys(ast).forEach(k => {
+			if (k === 'loc') {
+				ast.loc = loc;
+				found = true;
+			} else {
+				setLoc(ast[k], loc);
+			}
+		});
+		if (addIfMissing && !found) {
+			ast.loc = loc;
+		}
+	} else if (util.isArray(ast)) {
+		ast.forEach(o => setLoc(o, loc));
+	}
+	return ast;
+}
+
+function printSourceMap(source, target, map) {
+
+	const tabSpaces = '    ';
+	let sourceLines = source.split('\n');
+	let targetLines = target.split('\n');
+
+	function _print(source, line, column, lastColumn) {
+
+		if (!line) {
+			return;
+		}
+
+		function _pre(l, c) {
+			let s = '    ' + l;
+			return s.substring(s.length-4) + ':' + (c + '   ').substring(0,3) + '|';
+		}
+
+		// print code with prefix LLLL:CCC|
+		let padding = white(9); // padding for pre
+		let code = source[line-1];
+
+		if (line > 1) {
+			if (line > 2) {
+				console.log('%s%s', _pre(line-2, 0), source[line-3].replace(/\t/g, tabSpaces));
+			}
+			console.log('%s%s', _pre(line-1, 0), source[line-2].replace(/\t/g, tabSpaces));
+		}
+
+		if (!code) {
+			console.log('@@@@@@@', line, column, lastColumn);
+		}
+
+		console.log('%s%s', _pre(line, column), code.replace(/\t/g, tabSpaces));
+
+		// print highlight
+
+		if (column) {
+			padding += code.substring(0, column).replace(/\S/g, ' ').replace(/\t/g, tabSpaces);
+		}
+
+		let markers = '^';
+		if (lastColumn && lastColumn > column) {
+			markers = code.substring(column, lastColumn+1).replace(/\S/g, ' ').replace(/\t/, tabSpaces).replace(/ /g, '^');
+		}
+
+		console.log('%s%s', padding, markers);
+	}
+
+	return require('source-map').SourceMapConsumer.with(map, null, (consumer) => {
+		consumer.computeColumnSpans();
+		consumer.eachMapping(m => {
+			console.log('[mapping] ', m.name || '????', JSON.stringify(m), '\n');
+			_print(targetLines, m.generatedLine, m.generatedColumn, m.lastGeneratedColumn);
+			_print(sourceLines, m.originalLine, m.originalColumn);
+		});
+	});
+}
+
 module.exports = {
 	generate,
 	generateError,
@@ -335,6 +420,9 @@ module.exports = {
 	preprocessJXMLSource,
 	preprocessJXMLNode,
 	preprocessAST,
+	printSourceMap,
 	rewriteImports,
-	traverse
+	setLoc,
+	traverse,
+	white
 }

@@ -1,5 +1,5 @@
-const JXMLParser = require('./JXMLParser');
-const JXMLCodeGenerator = require('./JXMLCodeGenerator');
+const parse = require('./parser');
+const cgen = require('./codegenerator');
 const util = require('./util');
 
 
@@ -36,18 +36,15 @@ module.exports = (data, filepath, options = {}) => {
 			}
 			path.stop();
 
-			let parser = new JXMLParser();
-			let program = parser.parse(path, options);
-
-			let cgen = new JXMLCodeGenerator();
-			let ast = cgen.generate(program, options);
-			path.parentPath.replaceWithMultiple(ast);
+			let program = parse(path, options);
+			path.parentPath.replaceWithMultiple(cgen(program, options));
 		}
 	});
 
-	const { code, map } = util.generate(ast);
+	const { code, map } = util.generate(ast, { sourceMaps: true, sourceFileName: filename });
 
 	return {
-		content: code
+		content: code,
+		map
 	};
 };

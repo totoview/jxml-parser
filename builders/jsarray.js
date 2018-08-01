@@ -10,7 +10,7 @@ module.exports = (root, nsMap, strings) => {
 	function toValueAst(a) {
 
 		// this is probably the most straightforward way but requires the
-		// downstream tools to able to handle template literals.
+		// downstream tools to handle template literals.
 
 		// return T.ast('`' + a.value.replace(/\{(.*)\}/, '${$1}') + '`').expression;
 
@@ -43,7 +43,7 @@ module.exports = (root, nsMap, strings) => {
 
 		// simple value
 		if (comp.name === '') {
-			return toValueAst(comp);
+			return util.setLoc(toValueAst(comp), comp.loc, true);
 		}
 
 		const name = util.getNamespacedName(comp, nsMap);
@@ -63,13 +63,13 @@ module.exports = (root, nsMap, strings) => {
 				name = `${a.namespace}:${a.name}`;
 			}
 
-			attribs.push(t.objectProperty(t.stringLiteral(name), toValueAst(a)));
+			attribs.push(util.setLoc(t.objectProperty(t.stringLiteral(name), toValueAst(a)), a.loc, true));
 		});
 
 		return t.arrayExpression([
-			t.identifier(util.getGlobalReference(name)),
-			t.stringLiteral(id ? id.value : ''),
-			t.stringLiteral(style ? style.value : ''),
+			util.setLoc(t.identifier(util.getGlobalReference(name)), comp.loc, true),
+			util.setLoc(t.stringLiteral(id ? id.value : ''), (id ? id.loc : null), true),
+			util.setLoc(t.stringLiteral(style ? style.value : ''), (style ? style.loc : null), true),
 			t.arrayExpression(children),
 			t.objectExpression(attribs)
 		]);
