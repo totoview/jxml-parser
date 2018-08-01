@@ -264,7 +264,7 @@ function preprocessAST(prog, options) {
 			 *
 			 * For some reason, the trailing comments of the last statement of the anonymous
 			 * function (two, three) are also included in the trailing comments of the anonymous
-			 * function itself.
+			 * function itself. This could be a Babel bug.
 			 */
 			if (path.node.type === 'FunctionExpression' && path.node.loc) {
 				comments = comments.filter(c => c.loc.start.line >= path.node.loc.end.line);
