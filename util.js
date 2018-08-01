@@ -6,9 +6,10 @@ const util = require('util');
 
 // generate string of whitespaces
 function white(n) {
-	return Array(n).fill(' ').join('');
+	return (new Array(n)).fill(' ').join('');
 }
 
+// try to generate error message with code frame
 function generateError(e, filepath, source, loc) {
 
 	if (!loc) {
@@ -332,6 +333,9 @@ function rewriteImports(prog) {
 	});
 }
 
+/**
+ * Call cb on each loc of ast.
+ */
 function forEachLoc(ast, cb) {
 	if (util.isObject(ast)) {
 		Object.keys(ast).forEach(k => {
@@ -346,6 +350,9 @@ function forEachLoc(ast, cb) {
 	}
 }
 
+/**
+ * Update or set loc on ast via deep traversal.
+ */
 function setLoc(ast, loc, addIfMissing = false) {
 	if (util.isObject(ast)) {
 		let found = false;
@@ -366,6 +373,12 @@ function setLoc(ast, loc, addIfMissing = false) {
 	return ast;
 }
 
+/**
+ * Print source map for debugging.
+ * @param {string} source original source code
+ * @param {string} target generated code
+ * @param {any} map source map to print
+ */
 function printSourceMap(source, target, map) {
 
 	const tabSpaces = '    ';
