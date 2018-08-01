@@ -1,6 +1,5 @@
 
 const T = require('@babel/template').default;
-const parser = require('@babel/parser');
 const util = require('../util');
 
 const initT = T(`
@@ -33,7 +32,7 @@ module.exports = (prog, options) => {
 			// we need to use the full power of parser here instead of template:
 			// 1. to get parsing locations for sourcemap
 			// 2. to keep comments for preprocessing
-			progInit = parser.parse(code, {
+			progInit = util.parse(code, {
 				sourceFilename: options.filename,
 				sourceType: 'module',
 				plugins: [ 'jsx' ]

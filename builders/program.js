@@ -44,7 +44,7 @@ function buildImports(root, nsMap) {
 		const full = `${name[0]}::${name[1]}`;
 
 		if (!lut.has(full)) {
-			imports.push(buildImport(name));
+			imports.push(buildImport(name, comp.loc));
 			lut.add(full);
 		}
 

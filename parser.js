@@ -164,7 +164,7 @@ function parseComponents(e, parent, options = {}) {
 							throw new Error('Unexpected <string>');
 						}
 						s.value = c.children[0].value;
-						s.loc = e.loc;
+						s.loc = c.loc;
 						comp.strings.push(s);
 					} else {
 						parseComponents(c, comp, options);

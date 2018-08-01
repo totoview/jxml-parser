@@ -332,6 +332,20 @@ function rewriteImports(prog) {
 	});
 }
 
+function forEachLoc(ast, cb) {
+	if (util.isObject(ast)) {
+		Object.keys(ast).forEach(k => {
+			if (k === 'loc') {
+				cb(ast.loc);
+			} else {
+				forEachLoc(ast[k], cb);
+			}
+		});
+	} else if (util.isArray(ast)) {
+		ast.forEach(o => forEachLoc(o, cb));
+	}
+}
+
 function setLoc(ast, loc, addIfMissing = false) {
 	if (util.isObject(ast)) {
 		let found = false;
@@ -411,6 +425,7 @@ function printSourceMap(source, target, map) {
 }
 
 module.exports = {
+	forEachLoc,
 	generate,
 	generateError,
 	getNamespacedName,

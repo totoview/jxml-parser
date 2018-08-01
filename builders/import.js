@@ -4,9 +4,9 @@ const util = require('../util');
 
 const moduleRequireT = T(`NAME = require(MODULE);`);
 
-module.exports = name => {
+module.exports = (name, loc) => {
 	return util.setLoc(moduleRequireT({
 		NAME: t.identifier(util.getGlobalReference(name)),
 		MODULE: t.stringLiteral(util.getModulePath(name))
-	}), name[2], true);
+	}), loc, true);
 };
