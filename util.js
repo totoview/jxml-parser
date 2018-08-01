@@ -387,9 +387,7 @@ function printSourceMap(source, target, map) {
 
 	function _print(source, line, column, lastColumn) {
 
-		if (!line) {
-			return;
-		}
+		if (!line) return;
 
 		function _pre(l, c) {
 			let s = '    ' + l;
@@ -407,14 +405,9 @@ function printSourceMap(source, target, map) {
 			console.log('%s%s', _pre(line-1, 0), source[line-2].replace(/\t/g, tabSpaces));
 		}
 
-		if (!code) {
-			console.log('@@@@@@@', line, column, lastColumn);
-		}
-
 		console.log('%s%s', _pre(line, column), code.replace(/\t/g, tabSpaces));
 
 		// print highlight
-
 		if (column) {
 			padding += code.substring(0, column).replace(/\S/g, ' ').replace(/\t/g, tabSpaces);
 		}
