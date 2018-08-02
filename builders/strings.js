@@ -4,9 +4,15 @@ const util = require('../util');
 
 // convert <string> elements to js suitable for string extraction
 module.exports = (strings) => {
-	return strings.map(s =>
-		util.setLoc(T(`var ${s.id} = _(VALUE); // ${s.title}`, {
-			placeholderPattern: /^[$A-Z]+$/, // no underscore
-			preserveComments: true
-		})({ VALUE: t.stringLiteral(s.value) }), s.loc));
+	const prog = util.parse(strings.map(s => {
+		return `var ${s.id} = _T(${JSON.stringify(s.value)}); // ${s.title}`;
+	}).join('\n'));
+
+	prog.program.body.forEach((e, i) => {
+		util.setLoc(e, strings[i].loc);
+		util.setLoc(e.declarations[0].id, strings[i].idLoc);
+		util.setLoc(e.declarations[0].init, strings[i].valueLoc);
+	});
+
+	return prog.program.body;
 };

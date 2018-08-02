@@ -60,7 +60,6 @@ function setName(o, name) {
 						obj = null;
 						break;
 					case 'JSXMemberExpression':
-
 						m.push(obj.property.name);
 						obj = obj.object;
 						break;
@@ -164,6 +163,7 @@ function parseComponents(e, parent, options = {}) {
 							throw new Error('Unexpected <string>');
 						}
 						s.value = c.children[0].value;
+						s.valueLoc = c.children[0].loc;
 						s.loc = c.loc;
 						comp.strings.push(s);
 					} else {
@@ -198,8 +198,13 @@ function getNamespaces(comp) {
 
 function getStrings(comp) {
 	return comp.strings.map(s => {
-		let s2 = { value: s.value, loc: s.loc };
+		let s2 = { value: s.value, loc: s.loc, valueLoc: s.valueLoc };
 		s.attributes.forEach(a => {
+			if (a.name === 'id') {
+				s2.idLoc = a.loc;
+			} else if (a.name === 'title') {
+				s2.titleLoc = a.loc;
+			}
 			s2[a.name] = a.value;
 		});
 		return s2;
