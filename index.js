@@ -44,7 +44,7 @@ module.exports = (data, filepath, options = {}) => {
 	const { code, map } = util.generate(ast, { sourceMaps: true, sourceFileName: filename });
 
 	return {
-		content: code,
-		map
+		javascript: code,
+		sourcemap: map
 	};
 };
