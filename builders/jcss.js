@@ -1,5 +1,6 @@
 
 const T = require('@babel/template').default;
+const t = require('@babel/types');
 const util = require('../util');
 
 module.exports = (prog, options) => {
@@ -31,7 +32,8 @@ module.exports = (prog, options) => {
 		}
 	});
 
-	return T(`${prog.name}.__jx__jcss = CSS`)({
+	return T(`NAME.__jx__jcss = CSS`)({
+		NAME: t.identifier(prog.name),
 		CSS: ast
 	});
 };

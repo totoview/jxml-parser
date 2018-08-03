@@ -9,5 +9,6 @@ module.exports = (name, loc) => {
 		NAME: t.identifier(util.getGlobalReference(name)),
 		MODULE: util.setLoc(t.stringLiteral(util.getModulePath(name)), name[2], true)
 	}), loc, true);
-	return util.setLoc(ast.expression.right, name[2], true);
+	util.setLoc(ast.expression.right, name[2], true);
+	return ast;
 };

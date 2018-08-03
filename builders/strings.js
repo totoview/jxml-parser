@@ -5,7 +5,7 @@ const util = require('../util');
 // convert <string> elements to js suitable for string extraction
 module.exports = (strings) => {
 	const prog = util.parse(strings.map(s => {
-		return `var ${s.id} = _T(${JSON.stringify(s.value)}); // ${s.title}`;
+		return `var ${s.id} = _(${JSON.stringify(s.value)}); // ${s.title}`;
 	}).join('\n'));
 
 	prog.program.body.forEach((e, i) => {
