@@ -12,6 +12,9 @@ module.exports = (strings) => {
 		util.setLoc(e, strings[i].loc);
 		util.setLoc(e.declarations[0].id, strings[i].idLoc);
 		util.setLoc(e.declarations[0].init, strings[i].valueLoc);
+
+		if (i > 0) e.leadingComments[0].loc = strings[i-1].titleLoc;
+		e.trailingComments[0].loc = strings[i].titleLoc;
 	});
 
 	return prog.program.body;

@@ -328,7 +328,9 @@ function rewriteImports(prog) {
 	traverse(prog, {
 		ImportDeclaration: (path) => {
 			const p = path.node.source.value.split('.');
-			path.replaceWith(T.ast(`var ${p[p.length-1]} = require('${p.join('/')}')`));
+			const ast = T.ast(`var ${p[p.length-1]} = require('${p.join('/')}')`);
+			ast.loc = path.node.loc;
+			path.replaceWith(ast);
 		}
 	});
 }
