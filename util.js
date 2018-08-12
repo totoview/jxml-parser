@@ -375,63 +375,6 @@ function setLoc(ast, loc, addIfMissing = false) {
 	return ast;
 }
 
-/**
- * Print source map for debugging.
- * @param {string} source original source code
- * @param {string} target generated code
- * @param {any} map source map to print
- */
-function printSourceMap(source, target, map) {
-
-	const tabSpaces = '    ';
-	let sourceLines = source.split('\n');
-	let targetLines = target.split('\n');
-
-	function _print(source, line, column, lastColumn) {
-
-		if (!line) return;
-
-		function _pre(l, c) {
-			let s = '    ' + l;
-			return s.substring(s.length-4) + ':' + (c + '   ').substring(0,3) + '|';
-		}
-
-		// print code with prefix LLLL:CCC|
-		let padding = white(9); // padding for pre
-		let code = source[line-1];
-
-		if (line > 1) {
-			if (line > 2) {
-				console.log('%s%s', _pre(line-2, 0), source[line-3].replace(/\t/g, tabSpaces));
-			}
-			console.log('%s%s', _pre(line-1, 0), source[line-2].replace(/\t/g, tabSpaces));
-		}
-
-		console.log('%s%s', _pre(line, column), code.replace(/\t/g, tabSpaces));
-
-		// print highlight
-		if (column) {
-			padding += code.substring(0, column).replace(/\S/g, ' ').replace(/\t/g, tabSpaces);
-		}
-
-		let markers = '^';
-		if (lastColumn && lastColumn > column) {
-			markers = code.substring(column, lastColumn+1).replace(/\S/g, ' ').replace(/\t/, tabSpaces).replace(/ /g, '^');
-		}
-
-		console.log('%s%s', padding, markers);
-	}
-
-	return require('source-map').SourceMapConsumer.with(map, null, (consumer) => {
-		consumer.computeColumnSpans();
-		consumer.eachMapping(m => {
-			console.log('[mapping] ', m.name || '????', JSON.stringify(m), '\n');
-			_print(targetLines, m.generatedLine, m.generatedColumn, m.lastGeneratedColumn);
-			_print(sourceLines, m.originalLine, m.originalColumn);
-		});
-	});
-}
-
 module.exports = {
 	forEachLoc,
 	generate,
@@ -443,7 +386,6 @@ module.exports = {
 	preprocessJXMLSource,
 	preprocessJXMLNode,
 	preprocessAST,
-	printSourceMap,
 	rewriteImports,
 	setLoc,
 	traverse,

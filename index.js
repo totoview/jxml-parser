@@ -41,7 +41,9 @@ module.exports = (data, filepath, options = {}) => {
 		}
 	});
 
-	const { code, map } = util.generate(ast, { sourceMaps: true, sourceFileName: filename });
+	const { code, map } = util.generate(ast, { sourceMaps: true, sourceFileName: filepath });
+
+	map.sources = [ filepath ];
 	map.sourceContent = [ jxmlString ];
 
 	return {
