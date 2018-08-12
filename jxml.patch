@@ -1,0 +1,72 @@
+diff --git a/jxmlc.js b/jxmlc.js
+index 7bc7587..0b1c1d5 100644
+--- a/jxmlc.js
++++ b/jxmlc.js
+@@ -1,5 +1,6 @@
+ const
+ 	commonjs_mods = require('./jxmlcjs/commonjs/transformer.js'),
++	parseJXML = require('/Users/yli/Work/jxml-parser');
+ 
+ 	JS   = commonjs_mods.JS,
+ 	JXML = commonjs_mods.JXML;
+@@ -11,7 +12,24 @@ module.exports = function buildFromString(content, module_name, filename, define
+ 		mod = new JS(module_name, filename, content, defines);
+ 	}
+ 	else if (filename.match(/\.jxml$/)) {
+-		mod = new JXML(module_name, filename, content, defines);
++
++		let a = module_name.split('/');
++		let component = a.pop();
++		let module = a.join('.');
++		let filepath = filename;
++		let n = filename.lastIndexOf('!');
++		if (n > 0) {
++			filepath = filename.substring(n+1);
++		}
++
++		let { javascript: code, sourcemap: map } = parseJXML(content, filepath, {
++			component,
++			module,
++			defines
++		});
++		return { content: code, sourceMap: map };
++
++		// mod = new JXML(module_name, filename, content, defines);
+ 	}
+ 	else {
+ 		return content;
+diff --git a/jxmlcjs/webpack3/loaders/jxml-loader.js b/jxmlcjs/webpack3/loaders/jxml-loader.js
+index f6eb621..3c5617f 100644
+--- a/jxmlcjs/webpack3/loaders/jxml-loader.js
++++ b/jxmlcjs/webpack3/loaders/jxml-loader.js
+@@ -23,6 +23,8 @@ module.exports = function loadJXML(content) {
+ 	} else {
+ 		// This is followed up by the js-ast loader
+ 		result = { content: module.content, mod_name };
++		this.callback(null, module.content, module.sourceMap);
++		return;
+ 	}
+ 
+ 	return result;
+diff --git a/jxmlcjs/webpack3/plugins/jxml-resolver.js b/jxmlcjs/webpack3/plugins/jxml-resolver.js
+index 6f6ca9b..6a7701d 100644
+--- a/jxmlcjs/webpack3/plugins/jxml-resolver.js
++++ b/jxmlcjs/webpack3/plugins/jxml-resolver.js
+@@ -314,13 +314,13 @@ function getJXMLLoaders(requested_module, skipI18N, defines) {
+ 				defines
+ 			}
+ 		),
+-		JS_TO_AST_LOADER
++		// JS_TO_AST_LOADER
+ 	];
+ 
+-	if (!skipI18N) loaders.push(I18N_LOADER);
++	// if (!skipI18N) loaders.push(I18N_LOADER);
+ 
+-	loaders.push(LINTER_LOADER);
+-	loaders.push(AST_TO_JS_LOADER);
++	// loaders.push(LINTER_LOADER);
++	// loaders.push(AST_TO_JS_LOADER);
+ 
+ 	loaders.reverse();
+ 
