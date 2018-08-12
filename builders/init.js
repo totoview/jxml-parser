@@ -23,6 +23,7 @@ module.exports = (prog, options) => {
 			curLine = s.loc.end.line;
 		});
 
+		// anything special about dynamic import ?
 		let code = source.replace(/import\s+dynamic\s+([.\w]+)/g, `import '$1'`);
 		code = code.replace(/import\s+([.\w]+)/g, `import '$1'`);
 

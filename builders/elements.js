@@ -9,13 +9,10 @@ module.exports = (root) => {
 	let statements = [];
 
 	function bft(comp) {
-		const i = comp.attributes.findIndex(a => a.name === 'id');
-
-		if (i >= 0) {
-			const v = comp.attributes[i].value;
+		if (attr = comp.attributes.find(a => a.name === 'id')) {
 			statements.push(util.setLoc(elemT({
-				NAME: t.identifier(v),
-				SUFFIX: t.stringLiteral(`__${v}`)
+				NAME: t.identifier(attr.value),
+				SUFFIX: t.stringLiteral(`__${attr.value}`)
 			}), comp.loc, true));
 		}
 

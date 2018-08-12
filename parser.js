@@ -229,16 +229,14 @@ function getDefaultPlacement(comp) {
 		if (c.attributes.find(a => a.name === 'container' && a.value === 'default') != undefined) {
 			return c;
 		}
-		for (let i = 0; c.children && i < c.children.length; i++) {
-			let c2 = find(c.children[i]);
-			if (c2) {
+		for (let child of c.children || []) {
+			if (c2 = find(child)) {
 				return c2;
 			}
 		}
 	}
 
-	let c = find(comp);
-	if (c) {
+	if (c = find(comp)) {
 		let a = c.attributes.find(a => a.name === 'id');
 		if (!a) {
 			a = { name: 'id', type: 'text', value: '$$defaultplacement$$'};
