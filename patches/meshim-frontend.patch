@@ -1,0 +1,65 @@
+diff --git a/src/meshim/dashboard/components/account/api/ClientForm.jxml b/src/meshim/dashboard/components/account/api/ClientForm.jxml
+index c14ebe9a2..17f9bb3bd 100644
+--- a/src/meshim/dashboard/components/account/api/ClientForm.jxml
++++ b/src/meshim/dashboard/components/account/api/ClientForm.jxml
+@@ -170,7 +170,7 @@
+ 						var
+ 							params = {
+ 								client_id     : $api_client_node.$(edit_id).$('client_identifier$string').getValue(),
+-								client_secret : res.client_secret
++								client_secret : res.client_secret,
+ 								regen         : true
+ 							};
+ 
+diff --git a/src/meshim/dashboard/components/chatPanel/Integrations.jxml b/src/meshim/dashboard/components/chatPanel/Integrations.jxml
+index 7464870d3..cb8dfe448 100644
+--- a/src/meshim/dashboard/components/chatPanel/Integrations.jxml
++++ b/src/meshim/dashboard/components/chatPanel/Integrations.jxml
+@@ -87,7 +87,8 @@
+ 						continue;
+ 					}
+ 
+-					/* #ifdef _RELEASE */ try { /* #endif */
++					/* #ifdef _RELEASE */ 
++					try {
+ 						child = new type(container);
+ 
+ 						if (ZDApp.enabled) {
+@@ -97,8 +98,22 @@
+ 							}
+ 						}
+ 
+-						child.setData(value[k]);
+-					/* #ifdef _RELEASE */ } catch(e) { } /* #endif */
++						child.setData(value[k]); 
++					} catch(e) { } 
++					/* #endif */
++
++					/* #ifndef _RELEASE */
++					child = new type(container);
++
++					if (ZDApp.enabled) {
++						if (child instanceof Table || child instanceof Buttons) {
++							// setLinkHandler should make sure context 'this' is properly set
++							child.setLinkHandler(ZDUtils.handleZDLink);
++						}
++					}
++
++					child.setData(value[k]); 
++					/* #endif */
+ 
+ 					child.on('integrations:create', bubbleIntegrationsCreate);
+ 				}
+diff --git a/src/meshim/dashboard/components/visitors/visitorList/ViewsDefinition.js b/src/meshim/dashboard/components/visitors/visitorList/ViewsDefinition.js
+index 2cda3d0b7..fe6a1ae61 100644
+--- a/src/meshim/dashboard/components/visitors/visitorList/ViewsDefinition.js
++++ b/src/meshim/dashboard/components/visitors/visitorList/ViewsDefinition.js
+@@ -212,7 +212,7 @@ var ViewsDefinition =
+ 			display_name: _('Direct Visitors'), // Default subgroup for Search Term group. https://zendesk.box.com/s/iqhrqjok7jx4mlkyc5u04yuy5lox8yz3
+ 			item_sort: 'start$time'
+ 		}
+-	}
++	},
+ 
+ 	_search:
+ 	{
