@@ -90,9 +90,8 @@ function setValue(o, val) {
 			o.value = val.value;
 			break;
 		case 'JSXExpressionContainer':
-			const { code } = util.generate(val);
 			o.type = 'expression';
-			o.value = code;
+			o.value = util.generate(val).code;
 			break;
 	}
 }
@@ -237,12 +236,12 @@ function getDefaultPlacement(comp) {
 	}
 
 	if (c = find(comp)) {
-		let a = c.attributes.find(a => a.name === 'id');
-		if (!a) {
-			a = { name: 'id', type: 'text', value: '$$defaultplacement$$'};
-			c.attributes.push(a);
+		let attr = c.attributes.find(a => a.name === 'id');
+		if (!attr) {
+			attr = { name: 'id', type: 'text', value: '$$defaultplacement$$'};
+			c.attributes.push(attr);
 		}
-		return a.value;
+		return attr.value;
 	}
 }
 

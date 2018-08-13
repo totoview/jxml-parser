@@ -30,7 +30,6 @@ module.exports = (data, filepath, options = {}) => {
 
 	util.traverse(ast, {
 		JSXElement: (path) => {
-			// top element only
 			if (path.parentPath.parent.type !== 'Program') {
 				return;
 			}
