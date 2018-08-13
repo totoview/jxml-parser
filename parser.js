@@ -228,7 +228,7 @@ function getDefaultPlacement(comp) {
 		if (c.attributes.find(a => a.name === 'container' && a.value === 'default') != undefined) {
 			return c;
 		}
-		for (let child of c.children || []) {
+		for (const child of c.children || []) {
 			if (c2 = find(child)) {
 				return c2;
 			}
@@ -250,7 +250,7 @@ module.exports = (path, options) => {
 
 	util.preprocessJXMLNode(path, options);
 
-	let root = parseComponents(path.node, null, options);
+	const root = parseComponents(path.node, null, options);
 
 	return {
 		name: options.component,

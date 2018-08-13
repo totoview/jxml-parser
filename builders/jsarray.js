@@ -22,13 +22,11 @@ module.exports = (root, nsMap, strings) => {
 					return t.stringLiteral(a.value);
 				}
 				// handle string interpolation
-				let v = a.value;
-				let ast;
-				let pat = /^(.*)(\{.*?\})(.*)/;
-				let m = v.match(pat);
+				const pat = /^(.*)(\{.*?\})(.*)/;
+				let ast, v = a.value, m = v.match(pat);
 				while (m) {
 					v = m[3];
-					let  expr = t.binaryExpression('+', t.stringLiteral(m[1]), T.ast(m[2]).body[0].expression);
+					const  expr = t.binaryExpression('+', t.stringLiteral(m[1]), T.ast(m[2]).body[0].expression);
 					ast = ast ? t.binaryExpression('+', ast, expr) : expr;
 					m = v.match(pat);
 				}
@@ -54,7 +52,6 @@ module.exports = (root, nsMap, strings) => {
 		if (comp.children) {
 			comp.children.forEach(c => children.push(bft(c)));
 		}
-
 
 		let attribs = [];
 		comp.attributes.forEach(a => {
